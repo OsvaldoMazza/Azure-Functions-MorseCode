@@ -1,0 +1,62 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+
+namespace morse
+{
+    public static class AzureFunctionsWithDemo
+    {
+        [FunctionName("AzureFunctionsWithDemo")]
+         public static async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function processed a request.");
+
+            string word = req.Query["word"];
+
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            dynamic data = JsonConvert.DeserializeObject(requestBody);
+		      	word = word ?? data?.word;
+
+            string morseCode= GenerateMorseWord(word);
+
+			return word != null
+                ? (ActionResult)new OkObjectResult($"The morse code is: {morseCode}")
+                : new BadRequestObjectResult("Please pass a word on the query string or in the request body");
+        }
+		
+		  public static string GenerateMorseWord(String word)
+        {
+            
+            string abc =  "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" ;
+            
+            string[] morsecode = {
+                    " .- " , " -... " , " -.-. " , " -.. " , " . " , " ..-. " , " --. " , " .... " ,
+                    " .. " , " .--- " , " -.- " , " .- .. " , " -- " , " -. " , " --- " , " .--. " ,
+                    " --.- " , " .-. " , " ... " , " - " , " ..- " , " ...- " , " .-- " , " -..- " ,
+                    " -.-- " , " --.. "," .---- "," ..--- "," ...-- "," ....- "," ..... "," -.... ",
+                    " --... "," ---.. "," ----. "," ----- "
+            };
+
+            string result="";
+
+            string wordUpper=word.ToUpper();
+            
+            for (int i=0; i< wordUpper.Length; i++){
+
+            result+= morsecode[abc.IndexOf(wordUpper[i])];
+
+            }
+
+          
+          return result;  
+        }
+    }
+}
